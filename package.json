@@ -29,6 +29,7 @@
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
     "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-dist": "^5.30.2",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.11.0"
   },
