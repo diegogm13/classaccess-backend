@@ -38,11 +38,23 @@ const setupSwagger = (app) => {
   // Endpoint para servir el JSON de Swagger
   app.get('/api/docs/swagger.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
     res.send(specs);
   });
 
   // Endpoint para servir la UI de Swagger desde CDN
   app.get('/api/docs', (req, res) => {
+    // Establecer headers CSP directamente en la respuesta
+    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Security-Policy', 
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; " +
+      "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; " +
+      "img-src 'self' data: https:; " +
+      "font-src 'self' data: https://cdnjs.cloudflare.com;"
+    );
+    
     res.send(`
 <!DOCTYPE html>
 <html lang="es">

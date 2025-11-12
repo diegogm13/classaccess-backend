@@ -11,30 +11,32 @@ const setupSwagger = require('./config/swagger');
 
 const app = express();
 
-// 🛡️ Security headers (ajustado para Swagger UI)
-app.use(
+// 🌐 CORS (mover antes de helmet para evitar conflictos)
+app.use(cors(corsOptions));
+
+// 📘 Swagger documentation (ANTES de helmet para que tenga sus propios headers)
+setupSwagger(app);
+
+// 🛡️ Security headers (configurado para NO aplicar CSP en rutas de Swagger)
+app.use((req, res, next) => {
+  // Si es una ruta de Swagger, saltamos helmet CSP
+  if (req.path.startsWith('/api/docs')) {
+    return next();
+  }
+  
+  // Para el resto de rutas, aplicamos helmet con CSP
   helmet({
     contentSecurityPolicy: {
       useDefaults: true,
       directives: {
         "default-src": ["'self'"],
-        "script-src": [
-          "'self'",
-          "https://cdnjs.cloudflare.com" // permite scripts externos de Swagger UI
-        ],
-        "style-src": [
-          "'self'",
-          "https://cdnjs.cloudflare.com",
-          "'unsafe-inline'" // permite estilos inline requeridos por Swagger
-        ],
-        "img-src": ["'self'", "data:", "https://cdnjs.cloudflare.com"],
+        "script-src": ["'self'"],
+        "style-src": ["'self'"],
+        "img-src": ["'self'", "data:"],
       },
     },
-  })
-);
-
-// 🌐 CORS
-app.use(cors(corsOptions));
+  })(req, res, next);
+});
 
 // 🚦 Rate limiting
 app.use(rateLimiter);
@@ -50,9 +52,6 @@ app.use(morgan('combined', { stream: logger.stream }));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
-
-// 📘 Swagger documentation
-setupSwagger(app);
 
 // 🚀 Rutas principales
 app.use('/api', routes);
