@@ -8,10 +8,11 @@ const options = {
     info: {
       title: 'Servidor_ClassAccess API',
       version: '1.0.0',
-      description: 'Documentación de la API con Swagger',
+      description: 'Documentación oficial de la API del sistema ClassAccess.',
     },
     servers: [
-      { url: 'http://localhost:3000/api' }
+      { url: 'https://classaccess-backend.vercel.app/api' }, // 🌐 Producción (Vercel)
+      { url: 'http://localhost:3000/api' }                   // 💻 Desarrollo local
     ],
     components: {
       securitySchemes: {
@@ -36,6 +37,7 @@ const specs = swaggerJsdoc(options);
 
 const setupSwagger = (app) => {
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs));
+  console.log('📘 Swagger disponible en /api/docs');
 };
 
 module.exports = setupSwagger;
