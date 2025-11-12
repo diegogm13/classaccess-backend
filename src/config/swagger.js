@@ -62,7 +62,7 @@ const setupSwagger = (app) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ClassAccess API Documentation</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui.min.css" integrity="sha512-W8J9htScz2qJ5MccL4fT8HqR8vGFJO8dJoHJVR0yJstr2feTdAmCYkzDylpsH1RjvWNVZrHvgJmkPLe0tLsDZg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     body { 
       margin: 0; 
@@ -75,8 +75,8 @@ const setupSwagger = (app) => {
 </head>
 <body>
   <div id="swagger-ui"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui-bundle.min.js" integrity="sha512-jdKH4QjQ5pHUfPd/D4F0FVL7dZJIlARQRq7vxCpfKLMPqCEC2defTfLeIzCLbVwKNV76plxfBhKSGoF5F6LBBw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui-standalone-preset.min.js" integrity="sha512-VTdH7sa1Y7XDxmd+7OL5nOqdOZyvYp/goZGy7hu8VUWZ3D1eFDCcrUOlp2GpYQTc1P2ioLB5mLNGlfiuXOGJJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui-bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui-standalone-preset.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script>
     window.onload = function() {
       window.ui = SwaggerUIBundle({
