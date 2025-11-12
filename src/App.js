@@ -11,42 +11,61 @@ const setupSwagger = require('./config/swagger');
 
 const app = express();
 
-// Security headers
-app.use(helmet());
+// 🛡️ Security headers (ajustado para Swagger UI)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "script-src": [
+          "'self'",
+          "https://cdnjs.cloudflare.com" // permite scripts externos de Swagger UI
+        ],
+        "style-src": [
+          "'self'",
+          "https://cdnjs.cloudflare.com",
+          "'unsafe-inline'" // permite estilos inline requeridos por Swagger
+        ],
+        "img-src": ["'self'", "data:", "https://cdnjs.cloudflare.com"],
+      },
+    },
+  })
+);
 
-// CORS
+// 🌐 CORS
 app.use(cors(corsOptions));
 
-// Rate limiting
+// 🚦 Rate limiting
 app.use(rateLimiter);
 
-// Body parser
+// 📦 Body parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging
+// 🧾 Logging con Morgan y Winston
 app.use(morgan('combined', { stream: logger.stream }));
 
-// Health check
+// 🩺 Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Swagger documentation
+// 📘 Swagger documentation
 setupSwagger(app);
 
-// Routes
+// 🚀 Rutas principales
 app.use('/api', routes);
 
-// 404 handler
+// ❌ 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'Ruta no encontrada' 
+  res.status(404).json({
+    success: false,
+    message: 'Ruta no encontrada'
   });
 });
 
-// Error handler
+// 🧱 Error handler global
 app.use(errorHandler);
 
 module.exports = app;
