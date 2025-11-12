@@ -11,26 +11,37 @@ const logFormat = winston.format.combine(
 const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: logFormat,
-  transports: [
-    new winston.transports.File({ 
-      filename: path.join(__dirname, '../../logs/error.log'), 
-      level: 'error' 
-    }),
-    new winston.transports.File({ 
-      filename: path.join(__dirname, '../../logs/access.log') 
-    }),
-    new winston.transports.File({ 
-      filename: path.join(__dirname, '../../logs/audit.log'),
-      level: 'info'
-    }),
-    new winston.transports.File({ 
-      filename: path.join(__dirname, '../../logs/security.log'),
-      level: 'warn' // para eventos de seguridad
-    })
-  ]
+  transports: []
 });
 
-if (process.env.NODE_ENV !== 'production') {
+// 🚀 En producción (Vercel): solo consola
+if (process.env.NODE_ENV === 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    )
+  }));
+} else {
+  // 💻 En local: también guarda en archivos
+  const logDir = path.join(__dirname, '../../logs');
+  
+  logger.add(new winston.transports.File({ 
+    filename: path.join(logDir, 'error.log'), 
+    level: 'error' 
+  }));
+  logger.add(new winston.transports.File({ 
+    filename: path.join(logDir, 'access.log') 
+  }));
+  logger.add(new winston.transports.File({ 
+    filename: path.join(logDir, 'audit.log'),
+    level: 'info'
+  }));
+  logger.add(new winston.transports.File({ 
+    filename: path.join(logDir, 'security.log'),
+    level: 'warn'
+  }));
+
   logger.add(new winston.transports.Console({
     format: winston.format.combine(
       winston.format.colorize(),
@@ -39,6 +50,7 @@ if (process.env.NODE_ENV !== 'production') {
   }));
 }
 
+// Middleware para morgan
 logger.stream = {
   write: (message) => logger.info(message.trim())
 };
