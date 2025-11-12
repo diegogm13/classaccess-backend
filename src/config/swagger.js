@@ -11,8 +11,8 @@ const options = {
       description: 'Documentación oficial de la API del sistema ClassAccess.',
     },
     servers: [
-      { url: 'https://classaccess-backend.vercel.app/api' }, // 🌐 Producción (Vercel)
-      { url: 'http://localhost:3000/api' }                   // 💻 Desarrollo local
+      { url: 'https://classaccess-backend.vercel.app/api' },
+      { url: 'http://localhost:3000/api' }
     ],
     components: {
       securitySchemes: {
@@ -23,9 +23,7 @@ const options = {
         }
       }
     },
-    security: [
-      { bearerAuth: [] }
-    ]
+    security: [{ bearerAuth: [] }]
   },
   apis: [
     path.join(__dirname, '../routes/*.js'),
@@ -36,7 +34,13 @@ const options = {
 const specs = swaggerJsdoc(options);
 
 const setupSwagger = (app) => {
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
+    customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.min.js'
+    ]
+  }));
   console.log('📘 Swagger disponible en /api/docs');
 };
 
