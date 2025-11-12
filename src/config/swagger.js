@@ -1,7 +1,5 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 const path = require('path');
-const express = require('express');
-const swaggerUiAssetPath = require('swagger-ui-dist').absolutePath();
 
 const options = {
   definition: {
@@ -9,11 +7,11 @@ const options = {
     info: {
       title: 'Servidor_ClassAccess API',
       version: '1.0.0',
-      description: 'Documentación oficial de la API del sistema ClassAccess.',
+      description: 'Documentación de la API con Swagger',
     },
     servers: [
-      { url: 'https://classaccess-backend.vercel.app/api' }, // 🌐 Producción
-      { url: 'http://localhost:3000/api' }                   // 💻 Desarrollo local
+      { url: 'https://classaccess-backend.vercel.app/api' },
+      { url: 'http://localhost:3000/api' }
     ],
     components: {
       securitySchemes: {
@@ -24,7 +22,9 @@ const options = {
         }
       }
     },
-    security: [{ bearerAuth: [] }]
+    security: [
+      { bearerAuth: [] }
+    ]
   },
   apis: [
     path.join(__dirname, '../routes/*.js'),
@@ -35,53 +35,58 @@ const options = {
 const specs = swaggerJsdoc(options);
 
 const setupSwagger = (app) => {
-  // Servir archivos de Swagger UI desde swagger-ui-dist
-  app.use('/api/docs', express.static(swaggerUiAssetPath));
-
-  // Servir JSON con la definición de la API
+  // Endpoint para servir el JSON de Swagger
   app.get('/api/docs/swagger.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(specs);
   });
 
-  // Página de documentación
+  // Endpoint para servir la UI de Swagger desde CDN
   app.get('/api/docs', (req, res) => {
     res.send(`
-      <!DOCTYPE html>
-      <html lang="es">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>ClassAccess API Docs</title>
-          <link rel="stylesheet" href="./swagger-ui.css" />
-          <style>
-            body { margin: 0; background: #fafafa; }
-            .topbar { display: none; }
-          </style>
-        </head>
-        <body>
-          <div id="swagger-ui"></div>
-          <script src="./swagger-ui-bundle.js"></script>
-          <script src="./swagger-ui-standalone-preset.js"></script>
-          <script>
-            window.onload = () => {
-              const ui = SwaggerUIBundle({
-                url: '/api/docs/swagger.json',
-                dom_id: '#swagger-ui',
-                deepLinking: true,
-                presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
-                layout: "BaseLayout",
-                persistAuthorization: true // 🔐 Mantiene el token JWT entre peticiones
-              });
-              window.ui = ui;
-            };
-          </script>
-        </body>
-      </html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClassAccess API Documentation</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui.min.css" integrity="sha512-W8J9htScz2qJ5MccL4fT8HqR8vGFJO8dJoHJVR0yJstr2feTdAmCYkzDylpsH1RjvWNVZrHvgJmkPLe0tLsDZg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+    }
+    .swagger-ui .topbar { 
+      display: none; 
+    }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui-bundle.min.js" integrity="sha512-jdKH4QjQ5pHUfPd/D4F0FVL7dZJIlARQRq7vxCpfKLMPqCEC2defTfLeIzCLbVwKNV76plxfBhKSGoF5F6LBBw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.5/swagger-ui-standalone-preset.min.js" integrity="sha512-VTdH7sa1Y7XDxmd+7OL5nOqdOZyvYp/goZGy7hu8VUWZ3D1eFDCcrUOlp2GpYQTc1P2ioLB5mLNGlfiuXOGJJQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: '/api/docs/swagger.json',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        persistAuthorization: true
+      });
+    };
+  </script>
+</body>
+</html>
     `);
   });
-
-  console.log('📘 Swagger disponible en /api/docs');
 };
 
 module.exports = setupSwagger;
