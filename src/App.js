@@ -19,24 +19,23 @@ setupSwagger(app);
 
 // 🛡️ Security headers (configurado para NO aplicar CSP en rutas de Swagger)
 app.use((req, res, next) => {
-  // Si es una ruta de Swagger, saltamos helmet CSP
+  // Si es ruta de Swagger, NO aplicar la política CSP de Helmet
   if (req.path.startsWith('/api/docs')) {
     return next();
   }
-  
-  // Para el resto de rutas, aplicamos helmet con CSP
+
+  // En el resto de rutas sí aplicar Helmet completo
   helmet({
     contentSecurityPolicy: {
-      useDefaults: true,
       directives: {
-        "default-src": ["'self'"],
-        "script-src": ["'self'"],
-        "style-src": ["'self'"],
-        "img-src": ["'self'", "data:"],
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
       },
     },
   })(req, res, next);
 });
+
 
 // 🚦 Rate limiting
 app.use(rateLimiter);

@@ -14,13 +14,14 @@ class UserModel {
       await client.query('BEGIN');
 
       const userResult = await client.query(
-        'INSERT INTO usuarios (nombre_usu, ap_usu, am_usu, correo_usu, password, priv_usu, estatus_usu) VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING id_usu',
+        `INSERT INTO usuarios (nombre_usu, ap_usu, am_usu, correo_usu, password, priv_usu, estatus_usu)
+         VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING id_usu`,
         [nombre, ap, am, correo, hashedPassword, priv]
       );
 
       const idUsuario = userResult.rows[0].id_usu;
 
-      return { client, idUsuario }; // Retornamos client para transacciones posteriores
+      return { client, idUsuario };
     } catch (error) {
       await client.query('ROLLBACK');
       client.release();

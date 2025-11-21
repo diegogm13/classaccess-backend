@@ -14,9 +14,9 @@ const { sanitizeString, sanitizeEmail, sanitizePassword, sanitizeParamId, valida
 
 /**
  * @swagger
- * /users:
+ * /registrarUsuario:
  *   post:
- *     summary: Crear un nuevo usuario (público)
+ *     summary: Registrar un nuevo usuario (Alumno / Maestro / Admin)
  *     tags: [Users]
  *     requestBody:
  *       required: true
@@ -37,12 +37,15 @@ const { sanitizeString, sanitizeEmail, sanitizePassword, sanitizeParamId, valida
  *                 type: string
  *               priv:
  *                 type: integer
- *             required:
- *               - nombre
- *               - ap
- *               - am
- *               - correo
- *               - password
+ *                 description: 1=Alumno, 2=Maestro, 3=Administrador
+ *               matricula:
+ *                 type: string
+ *               cod_rfid:
+ *                 type: string
+ *               grupo:
+ *                 type: string
+ *               no_empleado:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Usuario creado exitosamente
@@ -50,7 +53,7 @@ const { sanitizeString, sanitizeEmail, sanitizePassword, sanitizeParamId, valida
  *         description: Error de validación
  */
 router.post(
-  '/',
+  '/registrarUsuario',
   registerValidation,
   sanitizeString('nombre'),
   sanitizeString('ap'),
@@ -68,15 +71,10 @@ router.use(authenticate);
  * @swagger
  * /users:
  *   get:
- *     summary: Obtener todos los usuarios (administrador)
+ *     summary: Obtener todos los usuarios (solo administradores)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de usuarios
- *       401:
- *         description: No autorizado
  */
 router.get('/', authorize(3), usersController.getUsers);
 
@@ -84,24 +82,8 @@ router.get('/', authorize(3), usersController.getUsers);
  * @swagger
  * /users/{id}/status:
  *   put:
- *     summary: Actualizar estatus de usuario (administrador)
+ *     summary: Actualizar estatus de usuario (solo administradores)
  *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID del usuario
- *     responses:
- *       200:
- *         description: Estatus actualizado
- *       401:
- *         description: No autorizado
- *       404:
- *         description: Usuario no encontrado
  */
 router.put(
   '/:id/status',
