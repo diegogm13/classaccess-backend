@@ -7,7 +7,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:5174',
-      'https://pagina-class-access.vercel.app' // <- tu frontend en Vercel
+
+      // 👉 AGREGADO TU FRONTEND REAL
+      'https://pagina-class-access.vercel.app'
     ];
 
 const corsOptions = {
@@ -19,18 +21,23 @@ const corsOptions = {
 
     // Permitir dominios de producción en Vercel
     if (process.env.NODE_ENV === 'production') {
-      const currentDomain = process.env.VERCEL_URL || 'classaccess-backend.vercel.app';
-      if (origin.includes(currentDomain) || origin.includes('vercel.app')) {
+      const currentDomain = process.env.VERCEL_URL || 'servidor-class-access.vercel.app';
+
+      if (
+        origin.includes(currentDomain) ||
+        origin.includes('vercel.app') ||
+        origin.includes('pagina-class-access.vercel.app') // 👈 IMPORTANTE
+      ) {
         return callback(null, true);
       }
     }
 
-    // Permitir dominios de desarrollo en localhost
+    // Permitir localhost
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
     }
 
-    // Permitir dominios específicos de la lista
+    // Permitir dominios específicos de allowedOrigins
     if (allowedOrigins.some(allowed => origin.includes(allowed))) {
       return callback(null, true);
     }
@@ -39,7 +46,8 @@ const corsOptions = {
     console.log('🚫 CORS bloqueado para origen:', origin);
     callback(new Error('No permitido por CORS'));
   },
-  credentials: true, // <- permite enviar cookies
+
+  credentials: true, // 👈 NECESARIO PARA COOKIES
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
