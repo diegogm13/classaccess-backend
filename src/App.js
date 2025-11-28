@@ -9,14 +9,15 @@ const { errorHandler } = require('./middlewares/errorHandler');
 const { rateLimiter } = require('./middlewares/rateLimit');
 const logger = require('./utils/logger');
 const setupSwagger = require('./config/swagger');
+const { corsOptions } = require('./config/security'); // <-- Importa corsOptions
 
 const app = express();
 
-// 🌐 CORS - ANTES de helmet y las rutas
-app.use(cors({
-  origin: ["http://localhost:3000", "https://pagina-class-access.vercel.app/"], // tu front dev + Vercel
-  credentials: true
-}));
+// 🌐 CORS - ANTES de Helmet y las rutas
+app.use(cors(corsOptions));
+
+// Opcional: manejar preflight OPTIONS explícitamente
+app.options('*', cors(corsOptions));
 
 // 🍪 Cookie parser
 app.use(cookieParser());
