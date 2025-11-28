@@ -4,67 +4,66 @@ const AuthService = require('../services/auth.service');
 const AuthModel = require('../models/Auth.model');
 
 class AuthController {
+
   /**
-   * POST /auth/login - Login de usuario
+   * POST /auth/login
    */
   static async login(req, res, next) {
     try {
       const { correo, password } = req.body;
 
-      // Buscar usuario por correo
       const user = await AuthModel.findByCorreo(correo);
-      
+
       if (!user) {
-        logger.warn('Intento de login fallido - Usuario no encontrado', { correo });
+        logger.warn('Intento de login - Usuario no encontrado', { correo });
         return ApiResponse.error(res, 'Credenciales incorrectas', 401);
       }
 
-      // Verificar contraseña
-      const isValidPassword = await AuthService.comparePassword(password, user.password);
-      
-      if (!isValidPassword) {
-        logger.warn('Intento de login fallido - Contraseña incorrecta', { correo });
+      const isValid = await AuthService.comparePassword(password, user.password);
+      if (!isValid) {
+        logger.warn('Intento de login - Contraseña incorrecta', { correo });
         return ApiResponse.error(res, 'Credenciales incorrectas', 401);
       }
 
-      // Verificar estatus
       if (user.estatus_usu !== true) {
         logger.warn('Intento de login - Usuario inactivo', { correo });
         return ApiResponse.error(res, 'Usuario inactivo. Contacta al administrador.', 403);
       }
 
-      // Generar tokens
-      const token = AuthService.generateToken(user);
+      // Tokens
+      const accessToken = AuthService.generateToken(user);
       const refreshToken = AuthService.generateRefreshToken(user);
 
-      // 👉 IMPORTANTE PARA QUE LAS COOKIES FUNCIONEN EN VERCEL
+      // ⚠️ IMPORTANTE
       res.setHeader("Access-Control-Allow-Credentials", "true");
 
-      const cookieConfigHttpOnly = {
+      // Config general
+      const cookieHttpOnly = {
         httpOnly: true,
-        secure: true,        // requerido en producción/vercel
-        sameSite: "none",    // requerido para cross-site cookies
+        secure: true,
+        sameSite: "none",
+        domain: "classaccess-backend.vercel.app",
         path: "/",
         maxAge: 24 * 60 * 60 * 1000
       };
 
-      const cookieConfigReadable = {
+      const cookieReadable = {
         httpOnly: false,
         secure: true,
         sameSite: "none",
+        domain: "classaccess-backend.vercel.app",
         path: "/",
         maxAge: 24 * 60 * 60 * 1000
       };
 
-      // 🍪 Cookies de seguridad
-      res.cookie("accessToken", token, cookieConfigHttpOnly);
+      // 🍪 Guardar cookies
+      res.cookie("accessToken", accessToken, cookieHttpOnly);
 
       res.cookie("refreshToken", refreshToken, {
-        ...cookieConfigHttpOnly,
+        ...cookieHttpOnly,
         maxAge: 7 * 24 * 60 * 60 * 1000
       });
 
-      // 🍪 Datos visibles para el frontend
       res.cookie("userData", JSON.stringify({
         id_usu: user.id_usu,
         nombre_usu: user.nombre_usu,
@@ -73,7 +72,7 @@ class AuthController {
         correo_usu: user.correo_usu,
         priv_usu: user.priv_usu,
         estatus_usu: user.estatus_usu
-      }), cookieConfigReadable);
+      }), cookieReadable);
 
       // Guardar refresh token en BD
       await AuthModel.saveRefreshToken(user.id_usu, refreshToken);
@@ -83,9 +82,9 @@ class AuthController {
         correo: user.correo_usu
       });
 
-      const { password: _, ...userWithoutPassword } = user;
+      const { password: _, ...userSanitized } = user;
 
-      return ApiResponse.success(res, { user: userWithoutPassword }, "Login exitoso");
+      return ApiResponse.success(res, { user: userSanitized }, "Login exitoso");
 
     } catch (error) {
       logger.error("Error en login", { error: error.message });
@@ -103,11 +102,13 @@ class AuthController {
       if (!refreshToken)
         return ApiResponse.error(res, "No hay sesión activa", 400);
 
+      // Eliminamos refresh token de BD
       await AuthModel.deleteRefreshToken(refreshToken);
 
       const cfg = {
         secure: true,
         sameSite: "none",
+        domain: "classaccess-backend.vercel.app",
         path: "/"
       };
 
@@ -126,7 +127,7 @@ class AuthController {
   }
 
   /**
-   * POST /auth/refresh - Renovar access token
+   * POST /auth/refresh
    */
   static async refreshAccessToken(req, res, next) {
     try {
@@ -154,6 +155,7 @@ class AuthController {
         httpOnly: true,
         secure: true,
         sameSite: "none",
+        domain: "classaccess-backend.vercel.app",
         path: "/",
         maxAge: 24 * 60 * 60 * 1000
       });
@@ -165,10 +167,7 @@ class AuthController {
     } catch (error) {
       logger.error("Error al renovar token", { error: error.message });
 
-      if (
-        error.name === "JsonWebTokenError" ||
-        error.name === "TokenExpiredError"
-      ) {
+      if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
         return ApiResponse.error(res, "Refresh token inválido o expirado", 401);
       }
 
