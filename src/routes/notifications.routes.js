@@ -15,32 +15,34 @@ router.use(authenticate);
 
 /**
  * @swagger
- * /notifications/student:
- *   post:
+ * /notifications/student/{studentId}:
+ *   get:
  *     summary: Obtener notificaciones de un estudiante
  *     tags: [Notifications]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               studentId:
- *                 type: integer
- *             required:
- *               - studentId
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del estudiante
  *     responses:
  *       200:
  *         description: Lista de notificaciones del estudiante
  *       400:
  *         description: Datos inválidos
+ *       403:
+ *         description: No autorizado
  */
-router.post(
-  '/student',
-  sanitizeNumber('studentId'), // reemplazamos sanitizeInt
+router.get(
+  '/student/:studentId',
+  (req, res, next) => {
+    req.body.studentId = req.params.studentId;
+    next();
+  },
+  sanitizeNumber('studentId'),
   validate,
   notificationsController.getStudentNotifications
 );
@@ -79,7 +81,7 @@ router.post(
   '/send',
   authorize(3),
   sanitizeString('message'),
-  sanitizeNumber('target'), // reemplazamos sanitizeInt
+  sanitizeNumber('target'),
   validate,
   notificationsController.sendNotification
 );

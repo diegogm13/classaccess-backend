@@ -4,28 +4,28 @@ const logger = require('../utils/logger');
 
 class NotificationsController {
   /**
-   * GET /notifications/:id - Obtener notificaciones de un estudiante
+   * GET /notifications/student/:studentId - Obtener notificaciones de un estudiante
    */
   static async getStudentNotifications(req, res, next) {
     try {
-      const { id } = req.params;
+      const { studentId } = req.params;
       const requesterId = req.user.id;
       const requesterPriv = req.user.priv_usu;
 
       // 🔒 Estudiante solo puede ver sus propias notificaciones
       // Maestros y administradores pueden ver cualquier notificación
-      if (requesterPriv === 1 && requesterId !== parseInt(id)) {
+      if (requesterPriv === 1 && requesterId !== parseInt(studentId)) {
         logger.warn('Estudiante intentó acceder a notificaciones de otro usuario', {
           requesterId,
-          targetId: id
+          targetId: studentId
         });
         return ApiResponse.error(res, 'No tienes permiso para ver estas notificaciones', 403);
       }
 
-      const notificaciones = await NotificationsService.getStudentNotifications(id);
+      const notificaciones = await NotificationsService.getStudentNotifications(studentId);
 
       logger.info('Notificaciones obtenidas', { 
-        studentId: id, 
+        studentId, 
         requesterId,
         count: notificaciones.length 
       });
@@ -34,7 +34,7 @@ class NotificationsController {
     } catch (error) {
       logger.error('Error al obtener notificaciones', { 
         error: error.message,
-        studentId: req.params.id 
+        studentId: req.params.studentId 
       });
       next(error);
     }

@@ -31,6 +31,7 @@ class StudentModel {
 
   /**
    * Obtener historial de asistencia de un alumno
+   * MODIFICADO: Ahora incluye el grupo del estudiante
    */
   static async getStudentHistory(id) {
     const query = `
@@ -39,10 +40,12 @@ class StudentModel {
         r.fecha, 
         r.hora_entrada, 
         r.hora_salida, 
-        a.nombre_aula, 
-        a.edificio
+        aula.nombre_aula, 
+        aula.edificio,
+        alum.grupo
       FROM registros r
-      LEFT JOIN aula a ON r.id_aula = a.id_aula
+      LEFT JOIN aula ON r.id_aula = aula.id_aula
+      LEFT JOIN alumnos alum ON r.id_usu = alum.id_usu
       WHERE r.id_usu = $1
       ORDER BY r.fecha DESC, r.hora_entrada DESC
     `;
