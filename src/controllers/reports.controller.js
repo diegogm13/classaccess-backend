@@ -31,7 +31,7 @@ class ReportsController {
     } catch (error) {
       next(error);
     }
-  }
+}
 }
 
 module.exports = ReportsController;

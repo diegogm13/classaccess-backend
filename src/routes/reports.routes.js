@@ -52,46 +52,34 @@ router.get(
  * @swagger
  * /reports/attendance/reports:
  *   get:
- *     summary: Obtener reportes de asistencia por grupo y rango de fechas
+ *     summary: Obtener reportes de asistencia por fecha y grupo (AMBOS REQUERIDOS)
  *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: fecha
+ *         required: true
  *         schema:
  *           type: string
  *           format: date
- *         description: Fecha específica
+ *         description: Fecha específica (REQUERIDO)
  *       - in: query
  *         name: grupo
+ *         required: true
  *         schema:
  *           type: string
- *         description: Grupo de alumnos
- *       - in: query
- *         name: fechaInicio
- *         schema:
- *           type: string
- *           format: date
- *         description: Fecha de inicio del rango
- *       - in: query
- *         name: fechaFin
- *         schema:
- *           type: string
- *           format: date
- *         description: Fecha de fin del rango
+ *         description: Grupo de alumnos (REQUERIDO)
  *     responses:
  *       200:
  *         description: Lista de reportes de asistencia
  *       400:
- *         description: Parámetros inválidos
+ *         description: Parámetros inválidos o faltantes
  */
 router.get(
   '/attendance/reports',
   sanitizeDate('fecha'),
   sanitizeString('grupo'),
-  sanitizeDate('fechaInicio'),
-  sanitizeDate('fechaFin'),
   validate,
   reportsController.getAttendanceReports
 );
@@ -106,7 +94,19 @@ router.get(
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Lista de grupos
+ *         description: Lista de grupos (array simple de strings)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["1A", "1B", "2A", "2B"]
  */
 router.get('/groups', reportsController.getGroups);
 

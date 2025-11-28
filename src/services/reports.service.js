@@ -1,4 +1,3 @@
-// services/reports.service.js
 const ReportModel = require('../models/Report.model');
 
 class ReportsService {
