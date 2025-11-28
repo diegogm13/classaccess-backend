@@ -37,23 +37,27 @@ class AuthController {
       const token = AuthService.generateToken(user);
       const refreshToken = AuthService.generateRefreshToken(user);
 
-      // 🍪 Guardar AMBOS tokens en cookies httpOnly
-      res.cookie('accessToken', token, {
+      // 🍪 OPCIONES DE COOKIES CORREGIDAS
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000 // 24 horas
-      });
+        secure: isProduction, // true en producción (HTTPS)
+        sameSite: isProduction ? 'none' : 'lax', // 🔥 CAMBIO CRÍTICO
+        maxAge: 24 * 60 * 60 * 1000, // 24 horas
+        path: '/'
+      };
+
+      // 🍪 Guardar AMBOS tokens en cookies httpOnly
+      res.cookie('accessToken', token, cookieOptions);
 
       res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        ...cookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
       });
 
       // 🍪 Guardar datos del usuario en cookie (NO httpOnly para que JS pueda leerlo)
-      res.cookie('userData', JSON.stringify({
+      const userData = {
         id_usu: user.id_usu,
         nombre_usu: user.nombre_usu,
         ap_usu: user.ap_usu,
@@ -61,11 +65,14 @@ class AuthController {
         correo_usu: user.correo_usu,
         priv_usu: user.priv_usu,
         estatus_usu: user.estatus_usu
-      }), {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000
+      };
+
+      res.cookie('userData', JSON.stringify(userData), {
+        httpOnly: false, // JS puede leerlo
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax', // 🔥 CAMBIO CRÍTICO
+        maxAge: 24 * 60 * 60 * 1000,
+        path: '/'
       });
 
       // Guardar refresh token en la base de datos
@@ -80,9 +87,12 @@ class AuthController {
       // Remover password de la respuesta
       const { password: _, ...userWithoutPassword } = user;
 
-      // Solo enviamos confirmación en el response, NO tokens
+      // 💡 También enviar datos en el body como respaldo
       return ApiResponse.success(res, {
-        user: userWithoutPassword
+        user: userWithoutPassword,
+        // Opcional: enviar tokens también en body para respaldo
+        accessToken: token,
+        refreshToken: refreshToken
       }, 'Login exitoso');
 
     } catch (error) {
@@ -105,23 +115,21 @@ class AuthController {
       // Eliminar refresh token de la base de datos
       await AuthModel.deleteRefreshToken(refreshToken);
 
+      const isProduction = process.env.NODE_ENV === 'production';
+
       // 🍪 Limpiar TODAS las cookies
-      res.clearCookie('accessToken', {
+      const clearOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax', // 🔥 CONSISTENTE
+        path: '/'
+      };
 
-      res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
-
+      res.clearCookie('accessToken', clearOptions);
+      res.clearCookie('refreshToken', clearOptions);
       res.clearCookie('userData', {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        ...clearOptions,
+        httpOnly: false
       });
 
       logger.info('Logout exitoso');
@@ -165,12 +173,15 @@ class AuthController {
       // Generar nuevo access token
       const newToken = AuthService.generateToken(user);
 
+      const isProduction = process.env.NODE_ENV === 'production';
+
       // 🍪 Actualizar cookie de accessToken
       res.cookie('accessToken', newToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax', // 🔥 CONSISTENTE
+        maxAge: 24 * 60 * 60 * 1000,
+        path: '/'
       });
 
       logger.info('Token renovado', { userId: user.id_usu });
