@@ -1,9 +1,9 @@
+// server.js
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
-const cookieParser = require('cookie-parser'); // 🍪 IMPORTAR cookie-parser
-const { corsOptions } = require('./config/security');
+const cookieParser = require('cookie-parser');
 const routes = require('./routes');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { rateLimiter } = require('./middlewares/rateLimit');
@@ -12,20 +12,34 @@ const setupSwagger = require('./config/swagger');
 
 const app = express();
 
-// 🌐 CORS (mover antes de helmet para evitar conflictos)
-app.use(cors(corsOptions));
+// 🌐 CORS - ANTES de helmet y las rutas
+app.use(cors({
+  origin: ["http://localhost:3000", "https://pagina-class-access.vercel.app/"], // tu front dev + Vercel
+  credentials: true
+}));
 
-// 📘 Swagger documentation (ANTES de helmet para que tenga sus propios headers)
+// 🍪 Cookie parser
+app.use(cookieParser());
+
+// 📦 Body parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// 🧾 Logging
+app.use(morgan('combined', { stream: logger.stream }));
+
+// 🩺 Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// 📘 Swagger
 setupSwagger(app);
 
-// 🛡️ Security headers (configurado para NO aplicar CSP en rutas de Swagger)
+// 🛡️ Helmet
 app.use((req, res, next) => {
-  // Si es ruta de Swagger, NO aplicar la política CSP de Helmet
-  if (req.path.startsWith('/api/docs')) {
-    return next();
-  }
+  if (req.path.startsWith('/api/docs')) return next();
 
-  // En el resto de rutas sí aplicar Helmet completo
   helmet({
     contentSecurityPolicy: {
       directives: {
@@ -40,30 +54,12 @@ app.use((req, res, next) => {
 // 🚦 Rate limiting
 app.use(rateLimiter);
 
-// 🍪 Cookie parser - CRÍTICO para leer cookies en req.cookies
-app.use(cookieParser());
-
-// 📦 Body parser
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// 🧾 Logging con Morgan y Winston
-app.use(morgan('combined', { stream: logger.stream }));
-
-// 🩺 Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
 // 🚀 Rutas principales
 app.use('/api', routes);
 
 // ❌ 404 handler
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Ruta no encontrada'
-  });
+  res.status(404).json({ success: false, message: 'Ruta no encontrada' });
 });
 
 // 🧱 Error handler global
