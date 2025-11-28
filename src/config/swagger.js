@@ -11,7 +11,7 @@ const options = {
     },
         servers: [
       {
-        url: 'https://servidor-class-access.vercel.app/api',
+        url: 'https://classaccess-backend.vercel.app/api',
         description: 'Producción'
       },
       {
