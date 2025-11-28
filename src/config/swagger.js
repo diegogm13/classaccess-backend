@@ -9,10 +9,17 @@ const options = {
       version: '1.0.0',
       description: 'Documentación de la API con Swagger',
     },
-    servers: [
-      { url: 'http://localhost:3001/api' }, // este es el que usarás en local
-      { url: 'https://classaccess-backend.vercel.app/api' }
+        servers: [
+      {
+        url: 'https://servidor-class-access.vercel.app/api',
+        description: 'Producción'
+      },
+      {
+        url: 'http://localhost:3001/api',
+        description: 'Local'
+      }
     ],
+
     components: {
       securitySchemes: {
         bearerAuth: {
