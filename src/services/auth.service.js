@@ -27,7 +27,7 @@ class AuthService {
     return jwt.verify(token, process.env.JWT_SECRET);
   }
 
-  // 🔹 NUEVO: Refresh Token (token de larga duración)
+  // Refresh Token (token de larga duración)
   static generateRefreshToken(user) {
     return jwt.sign(
       {
@@ -38,7 +38,7 @@ class AuthService {
     );
   }
 
-  // 🔹 NUEVO: Verificar refresh token
+  // Verificar refresh token
   static verifyRefreshToken(token) {
     return jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'refresh_secret_default');
   }

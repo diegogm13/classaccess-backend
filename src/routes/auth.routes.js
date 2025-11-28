@@ -51,25 +51,28 @@ router.post(
  *   post:
  *     summary: Logout de usuario
  *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               refreshToken:
- *                 type: string
- *                 example: <refreshToken>
  *     responses:
  *       200:
  *         description: Logout exitoso
  */
 router.post(
   '/logout',
-  sanitizeString('refreshToken'),
-  validate,
   authController.logout
+);
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Renovar access token
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Token renovado exitosamente
+ */
+router.post(
+  '/refresh',
+  authController.refreshAccessToken
 );
 
 module.exports = router;

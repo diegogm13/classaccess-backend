@@ -1,88 +1,189 @@
-const AuthService = require('../services/auth.service');
 const ApiResponse = require('../utils/responses');
 const logger = require('../utils/logger');
+const AuthService = require('../services/auth.service');
 const AuthModel = require('../models/Auth.model');
 
 class AuthController {
+  /**
+   * POST /auth/login - Login de usuario
+   */
   static async login(req, res, next) {
-    const { correo, password } = req.body;
-
     try {
-      const user = await AuthModel.findUserByEmail(correo);
+      const { correo, password } = req.body;
 
+      // Buscar usuario por correo
+      const user = await AuthModel.findByCorreo(correo);
+      
       if (!user) {
-        logger.warn('Intento de login fallido', { correo });
-        return ApiResponse.unauthorized(res, 'Credenciales inválidas');
+        logger.warn('Intento de login fallido - Usuario no encontrado', { correo });
+        return ApiResponse.error(res, 'Credenciales incorrectas', 401);
       }
 
-      const isPasswordValid = await AuthService.comparePassword(password, user.password);
-
-      if (!isPasswordValid) {
-        logger.warn('Intento de login con password incorrecta', { correo });
-        return ApiResponse.unauthorized(res, 'Credenciales inválidas');
+      // Verificar contraseña
+      const isValidPassword = await AuthService.comparePassword(password, user.password);
+      
+      if (!isValidPassword) {
+        logger.warn('Intento de login fallido - Contraseña incorrecta', { correo });
+        return ApiResponse.error(res, 'Credenciales incorrectas', 401);
       }
 
+      // Verificar estatus del usuario
+      if (user.estatus_usu !== true) {
+        logger.warn('Intento de login - Usuario inactivo', { correo });
+        return ApiResponse.error(res, 'Usuario inactivo. Contacta al administrador.', 403);
+      }
+
+      // Generar tokens
       const token = AuthService.generateToken(user);
       const refreshToken = AuthService.generateRefreshToken(user);
 
+      // 🍪 Guardar AMBOS tokens en cookies httpOnly
+      res.cookie('accessToken', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000 // 24 horas
+      });
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+      });
+
+      // 🍪 Guardar datos del usuario en cookie (NO httpOnly para que JS pueda leerlo)
+      res.cookie('userData', JSON.stringify({
+        id_usu: user.id_usu,
+        nombre_usu: user.nombre_usu,
+        ap_usu: user.ap_usu,
+        am_usu: user.am_usu,
+        correo_usu: user.correo_usu,
+        priv_usu: user.priv_usu,
+        estatus_usu: user.estatus_usu
+      }), {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000
+      });
+
+      // Guardar refresh token en la base de datos
       await AuthModel.saveRefreshToken(user.id_usu, refreshToken);
 
-      delete user.password;
+      logger.info('Login exitoso', { 
+        userId: user.id_usu, 
+        correo: user.correo_usu,
+        priv: user.priv_usu
+      });
 
-      logger.info('Login exitoso', { userId: user.id_usu, correo: user.correo_usu });
+      // Remover password de la respuesta
+      const { password: _, ...userWithoutPassword } = user;
 
-      return ApiResponse.success(
-        res,
-        { user, token, refreshToken },
-        'Login exitoso'
-      );
+      // Solo enviamos confirmación en el response, NO tokens
+      return ApiResponse.success(res, {
+        user: userWithoutPassword
+      }, 'Login exitoso');
+
     } catch (error) {
+      logger.error('Error en login', { error: error.message });
       next(error);
     }
   }
 
-  static async refreshToken(req, res, next) {
-    const { token } = req.body;
-
+  /**
+   * POST /auth/logout - Logout de usuario
+   */
+  static async logout(req, res, next) {
     try {
-      if (!token) return ApiResponse.unauthorized(res, 'Token requerido');
+      const refreshToken = req.cookies.refreshToken;
 
-      const decoded = AuthService.verifyRefreshToken(token);
-
-      const user = await AuthModel.findUserByRefreshToken(token);
-
-      if (!user || user.id_usu !== decoded.id) {
-        return ApiResponse.unauthorized(res, 'Refresh token inválido');
+      if (!refreshToken) {
+        return ApiResponse.error(res, 'No hay sesión activa', 400);
       }
 
-      const newAccessToken = AuthService.generateToken(user);
+      // Eliminar refresh token de la base de datos
+      await AuthModel.deleteRefreshToken(refreshToken);
 
-      return ApiResponse.success(
-        res,
-        { accessToken: newAccessToken },
-        'Token renovado correctamente'
-      );
+      // 🍪 Limpiar TODAS las cookies
+      res.clearCookie('accessToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+
+      res.clearCookie('userData', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+
+      logger.info('Logout exitoso');
+
+      return ApiResponse.success(res, null, 'Logout exitoso');
+
     } catch (error) {
+      logger.error('Error en logout', { error: error.message });
       next(error);
     }
   }
 
-  static async logout(req, res, next) {
-    const { refreshToken } = req.body;
-
+  /**
+   * POST /auth/refresh - Renovar access token usando refresh token
+   */
+  static async refreshAccessToken(req, res, next) {
     try {
-      if (!refreshToken) return ApiResponse.badRequest(res, 'Refresh token requerido');
+      const refreshToken = req.cookies.refreshToken;
 
-      const user = await AuthModel.findUserByRefreshToken(refreshToken);
+      if (!refreshToken) {
+        return ApiResponse.error(res, 'Refresh token no proporcionado', 401);
+      }
 
-      if (!user) return ApiResponse.unauthorized(res, 'Refresh token inválido');
+      // Verificar refresh token
+      const decoded = AuthService.verifyRefreshToken(refreshToken);
 
-      await AuthModel.deleteRefreshToken(user.id_usu);
+      // Verificar que el token exista en la BD
+      const isValid = await AuthModel.verifyRefreshToken(refreshToken);
+      
+      if (!isValid) {
+        return ApiResponse.error(res, 'Refresh token inválido o expirado', 401);
+      }
 
-      logger.info('Logout exitoso', { userId: user.id_usu });
+      // Obtener usuario actualizado
+      const user = await AuthModel.findById(decoded.id);
 
-      return ApiResponse.success(res, null, 'Logout exitoso');
+      if (!user || user.estatus_usu !== true) {
+        return ApiResponse.error(res, 'Usuario no válido', 401);
+      }
+
+      // Generar nuevo access token
+      const newToken = AuthService.generateToken(user);
+
+      // 🍪 Actualizar cookie de accessToken
+      res.cookie('accessToken', newToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000
+      });
+
+      logger.info('Token renovado', { userId: user.id_usu });
+
+      return ApiResponse.success(res, null, 'Token renovado exitosamente');
+
     } catch (error) {
+      logger.error('Error al renovar token', { error: error.message });
+      
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        return ApiResponse.error(res, 'Refresh token inválido o expirado', 401);
+      }
+      
       next(error);
     }
   }

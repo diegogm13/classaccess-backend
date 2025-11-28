@@ -2,6 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser'); // 🍪 IMPORTAR cookie-parser
 const { corsOptions } = require('./config/security');
 const routes = require('./routes');
 const { errorHandler } = require('./middlewares/errorHandler');
@@ -36,9 +37,11 @@ app.use((req, res, next) => {
   })(req, res, next);
 });
 
-
 // 🚦 Rate limiting
 app.use(rateLimiter);
+
+// 🍪 Cookie parser - CRÍTICO para leer cookies en req.cookies
+app.use(cookieParser());
 
 // 📦 Body parser
 app.use(express.json({ limit: '10mb' }));

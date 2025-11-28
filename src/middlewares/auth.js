@@ -1,47 +1,103 @@
-const jwt = require('jsonwebtoken');
+// middlewares/auth.js
 const ApiResponse = require('../utils/responses');
+const AuthService = require('../services/auth.service');
 const logger = require('../utils/logger');
 
-const authenticate = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return ApiResponse.unauthorized(res, 'Token no proporcionado');
-  }
-
+/**
+ * 🍪 Middleware para autenticar mediante cookies
+ */
+const authenticate = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    
-    logger.info('Usuario autenticado', { 
+    // Obtener el accessToken de las cookies
+    const token = req.cookies.accessToken;
+
+    if (!token) {
+      logger.warn('Token no proporcionado en cookies');
+      return ApiResponse.error(res, 'No autenticado. Token no proporcionado.', 401);
+    }
+
+    // Verificar el token
+    const decoded = AuthService.verifyToken(token);
+
+    // Adjuntar información del usuario al request
+    req.user = {
+      id: decoded.id,
+      correo: decoded.correo,
+      priv_usu: decoded.priv_usu
+    };
+
+    logger.info('Usuario autenticado correctamente', { 
       userId: decoded.id, 
-      email: decoded.correo 
+      priv: decoded.priv_usu 
     });
-    
+
     next();
+
   } catch (error) {
-    logger.warn('Token inválido', { token, error: error.message });
-    return ApiResponse.unauthorized(res, 'Token inválido o expirado');
+    if (error.name === 'JsonWebTokenError') {
+      logger.warn('Token inválido', { error: error.message });
+      return ApiResponse.error(res, 'Token inválido', 401);
+    }
+
+    if (error.name === 'TokenExpiredError') {
+      logger.warn('Token expirado');
+      return ApiResponse.error(res, 'Token expirado. Por favor, inicia sesión nuevamente.', 401);
+    }
+
+    logger.error('Error en autenticación', { error: error.message });
+    return ApiResponse.error(res, 'Error al autenticar', 500);
   }
 };
 
-const authorize = (...allowedRoles) => {
+/**
+ * 🛡️ Middleware para autorizar según privilegio
+ * @param {Array<number>} allowedPrivileges - Array de privilegios permitidos
+ */
+const authorize = (...allowedPrivileges) => {
   return (req, res, next) => {
     if (!req.user) {
-      return ApiResponse.unauthorized(res);
+      logger.warn('Intento de autorización sin usuario autenticado');
+      return ApiResponse.error(res, 'No autenticado', 401);
     }
 
-    if (!allowedRoles.includes(req.user.priv_usu)) {
-      logger.warn('Acceso denegado', { 
-        userId: req.user.id, 
-        requiredRole: allowedRoles, 
-        userRole: req.user.priv_usu 
+    if (!allowedPrivileges.includes(req.user.priv_usu)) {
+      logger.warn('Acceso denegado por privilegios insuficientes', {
+        userId: req.user.id,
+        requiredPriv: allowedPrivileges,
+        userPriv: req.user.priv_usu
       });
-      return ApiResponse.forbidden(res, 'No tienes permisos para esta acción');
+      return ApiResponse.error(res, 'No tienes permisos para acceder a este recurso', 403);
     }
 
     next();
   };
 };
 
-module.exports = { authenticate, authorize };
+/**
+ * 🔓 Middleware opcional de autenticación (no falla si no hay token)
+ */
+const optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.cookies.accessToken;
+
+    if (token) {
+      const decoded = AuthService.verifyToken(token);
+      req.user = {
+        id: decoded.id,
+        correo: decoded.correo,
+        priv_usu: decoded.priv_usu
+      };
+    }
+
+    next();
+  } catch (error) {
+    // Si falla, simplemente continúa sin usuario
+    next();
+  }
+};
+
+module.exports = {
+  authenticate,
+  authorize,
+  optionalAuth
+};
