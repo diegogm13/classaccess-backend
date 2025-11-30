@@ -4,6 +4,8 @@ const AuthService = require('../services/auth.service');
 const AuthModel = require('../models/Auth.model');
 
 class AuthController {
+
+  // ---------------- LOGIN ----------------
   static async login(req, res, next) {
     try {
       const { correo, password } = req.body;
@@ -21,10 +23,8 @@ class AuthController {
       const accessToken = AuthService.generateToken(user);
       const refreshToken = AuthService.generateRefreshToken(user);
 
-      // permitir cookies cross-site
       res.setHeader("Access-Control-Allow-Credentials", "true");
 
-      // config cookies
       const cfgHttpOnly = {
         httpOnly: true,
         secure: true,
@@ -41,7 +41,7 @@ class AuthController {
         maxAge: 24 * 60 * 60 * 1000
       };
 
-      // guardar cookies
+      // cookies
       res.cookie("accessToken", accessToken, cfgHttpOnly);
       res.cookie("refreshToken", refreshToken, {
         ...cfgHttpOnly,
@@ -67,6 +67,47 @@ class AuthController {
     } catch (error) {
       logger.error("Error login", error);
       next(error);
+    }
+  }
+
+  // ---------------- LOGOUT ----------------
+  static async logout(req, res) {
+    try {
+      res.clearCookie("accessToken", { path: "/" });
+      res.clearCookie("refreshToken", { path: "/" });
+      res.clearCookie("userData", { path: "/" });
+
+      return ApiResponse.success(res, {}, "Logout exitoso");
+    } catch (error) {
+      logger.error("Error logout", error);
+      return ApiResponse.error(res, "Error al cerrar sesión", 500);
+    }
+  }
+
+  // ---------------- REFRESH TOKEN ----------------
+  static async refreshAccessToken(req, res) {
+    try {
+      const refresh = req.cookies.refreshToken;
+      if (!refresh)
+        return ApiResponse.error(res, "No hay refresh token", 401);
+
+      const newAccess = AuthService.refreshAccessToken(refresh);
+      if (!newAccess)
+        return ApiResponse.error(res, "Refresh token inválido", 403);
+
+      res.cookie("accessToken", newAccess, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        path: "/",
+        maxAge: 24 * 60 * 60 * 1000
+      });
+
+      return ApiResponse.success(res, { accessToken: newAccess }, "Token renovado");
+
+    } catch (error) {
+      logger.error("Error refresh token", error);
+      return ApiResponse.error(res, "Error al renovar token", 500);
     }
   }
 }
