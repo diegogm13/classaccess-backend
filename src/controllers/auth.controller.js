@@ -29,6 +29,7 @@ class AuthController {
         httpOnly: true,
         secure: true,
         sameSite: "none",
+        domain: ".vercel.app", // 🔥 AGREGADO - permite compartir cookies entre subdominios
         path: "/",
         maxAge: 24 * 60 * 60 * 1000
       };
@@ -37,6 +38,7 @@ class AuthController {
         httpOnly: false,
         secure: true,
         sameSite: "none",
+        domain: ".vercel.app", // 🔥 AGREGADO - permite compartir cookies entre subdominios
         path: "/",
         maxAge: 24 * 60 * 60 * 1000
       };
@@ -62,6 +64,9 @@ class AuthController {
 
       const { password: _, ...userClean } = user;
 
+      // 🔥 Log para debug (opcional, puedes quitarlo después)
+      console.log('🍪 Cookies configuradas con domain: .vercel.app');
+
       return ApiResponse.success(res, { user: userClean }, "Login exitoso");
 
     } catch (error) {
@@ -73,9 +78,17 @@ class AuthController {
   // ---------------- LOGOUT ----------------
   static async logout(req, res) {
     try {
-      res.clearCookie("accessToken", { path: "/" });
-      res.clearCookie("refreshToken", { path: "/" });
-      res.clearCookie("userData", { path: "/" });
+      // 🔥 MODIFICADO - agregar las mismas opciones para poder borrar las cookies
+      const clearOptions = {
+        path: "/",
+        secure: true,
+        sameSite: "none",
+        domain: ".vercel.app" // 🔥 AGREGADO - debe coincidir con el domain usado al crear la cookie
+      };
+
+      res.clearCookie("accessToken", clearOptions);
+      res.clearCookie("refreshToken", clearOptions);
+      res.clearCookie("userData", clearOptions);
 
       return ApiResponse.success(res, {}, "Logout exitoso");
     } catch (error) {
@@ -95,10 +108,12 @@ class AuthController {
       if (!newAccess)
         return ApiResponse.error(res, "Refresh token inválido", 403);
 
+      // 🔥 MODIFICADO - agregar domain a la cookie renovada
       res.cookie("accessToken", newAccess, {
         httpOnly: true,
         secure: true,
         sameSite: "none",
+        domain: ".vercel.app", // 🔥 AGREGADO
         path: "/",
         maxAge: 24 * 60 * 60 * 1000
       });
