@@ -21,7 +21,7 @@ const registerValidation = [
   body('am').trim().notEmpty().withMessage('Apellido materno requerido'),
   body('correo').isEmail().withMessage('Email inválido'),
   body('password').isLength({ min: 6 }).withMessage('Password debe tener mínimo 6 caracteres'),
-  body('priv').isInt({ min: 1, max: 3 }).withMessage('Privilegio inválido'),
+  body('priv').isInt({ min: 1, max: 4 }).withMessage('Privilegio inválido'),
   validate
 ];
 

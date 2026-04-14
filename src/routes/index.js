@@ -11,6 +11,7 @@ const classroomsRoutes = require('./classrooms.routes');
 const notificationsRoutes = require('./notifications.routes');
 const reportsRoutes = require('./reports.routes');
 const guardiaRoutes = require('./guardia.routes');
+const esp32Routes = require('./esp32.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
@@ -22,5 +23,6 @@ router.use('/classrooms', classroomsRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/guardia', guardiaRoutes);
+router.use('/esp32', esp32Routes);   // Publico - sin autenticacion
 
 module.exports = router;

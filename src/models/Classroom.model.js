@@ -44,6 +44,23 @@ class ClassroomModel {
     return result.rows;
   }
 
+  // Obtener estado de un aula específica (para ESP32)
+  static async getEstadoAulaById(id_aula) {
+    const result = await pool.query(
+      `SELECT a.id_aula, a.nombre_aula, a.estado_aula,
+              CASE
+                WHEN a.id_maestro_actual IS NOT NULL
+                THEN u.nombre_usu || ' ' || u.ap_usu
+                ELSE NULL
+              END AS nombre_maestro
+       FROM aula a
+       LEFT JOIN usuarios u ON a.id_maestro_actual = u.id_usu
+       WHERE a.id_aula = $1`,
+      [id_aula]
+    );
+    return result.rows[0];
+  }
+
   // Actualizar estado de un aula (semáforo)
   static async updateEstadoAula(id, estado_aula, id_maestro_actual) {
     const result = await pool.query(
