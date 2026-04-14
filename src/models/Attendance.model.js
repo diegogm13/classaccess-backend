@@ -15,7 +15,9 @@ class AttendanceModel {
     const result = await pool.query(
       `SELECT r.id_registro FROM registros r
        JOIN profesor p ON r.id_usu = p.id_usu
-       WHERE r.id_aula = $1 AND r.fecha = CURRENT_DATE`,
+       WHERE r.id_aula = $1
+         AND r.fecha = CURRENT_DATE
+         AND r.hora_salida IS NULL`,
       [id_aula]
     );
     return result.rows.length > 0;
