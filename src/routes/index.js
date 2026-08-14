@@ -12,6 +12,8 @@ const notificationsRoutes = require('./notifications.routes');
 const reportsRoutes = require('./reports.routes');
 const guardiaRoutes = require('./guardia.routes');
 const esp32Routes = require('./esp32.routes');
+const horariosRoutes = require('./horarios.routes');
+const reportsAsistenciaRoutes = require('./reportsAsistencia.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
@@ -21,7 +23,9 @@ router.use('/attendance', attendanceRoutes);
 router.use('/devices', devicesRoutes);
 router.use('/classrooms', classroomsRoutes);
 router.use('/notifications', notificationsRoutes);
+router.use('/reports/asistencia', reportsAsistenciaRoutes); // Antes de /reports (más específica)
 router.use('/reports', reportsRoutes);
+router.use('/horarios', horariosRoutes);
 router.use('/guardia', guardiaRoutes);
 router.use('/esp32', esp32Routes);   // Publico - sin autenticacion
 

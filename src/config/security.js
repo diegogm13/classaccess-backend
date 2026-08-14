@@ -6,6 +6,7 @@ const corsOptions = {
       "https://pagina-class-access.vercel.app",   // 🔥 FRONTEND REAL EN VERCEL
       "https://classaccess-backend.vercel.app",   // 🔥 Tu backend (requests internos)
       "http://localhost:3000",
+      "http://localhost:3002",
       "http://localhost:5173",
       "http://localhost:5174"
     ];
