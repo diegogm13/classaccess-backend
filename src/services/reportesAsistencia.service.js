@@ -128,14 +128,26 @@ class ReportesAsistenciaService {
     }
   }
 
-  static async getTabla(desdeParam, hastaParam) {
+  static async getTabla(desdeParam, hastaParam, grupo, turno) {
     try {
       const { actual } = periodosComparables();
       const desde = desdeParam || actual.desde;
       const hasta = hastaParam || actual.hasta;
-      return await ReportesAsistenciaModel.getTablaAlumnos(desde, hasta);
+      return await ReportesAsistenciaModel.getTablaAlumnos(desde, hasta, grupo, turno);
     } catch (error) {
       logger.error('Error obteniendo tabla de asistencia', { error: error.message });
+      throw error;
+    }
+  }
+
+  static async getBitacora(idUsu, desdeParam, hastaParam) {
+    try {
+      const { actual } = periodosComparables();
+      const desde = desdeParam || actual.desde;
+      const hasta = hastaParam || actual.hasta;
+      return await ReportesAsistenciaModel.getBitacoraAlumno(idUsu, desde, hasta);
+    } catch (error) {
+      logger.error('Error obteniendo bitácora de alumno', { error: error.message });
       throw error;
     }
   }

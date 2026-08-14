@@ -32,9 +32,20 @@ class ReportesAsistenciaController {
 
   static async getTabla(req, res, next) {
     try {
-      const { desde, hasta } = req.query;
-      const tabla = await ReportesAsistenciaService.getTabla(desde, hasta);
+      const { desde, hasta, grupo, turno } = req.query;
+      const tabla = await ReportesAsistenciaService.getTabla(desde, hasta, grupo, turno);
       return ApiResponse.success(res, tabla);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getBitacora(req, res, next) {
+    try {
+      const { idUsu } = req.params;
+      const { desde, hasta } = req.query;
+      const bitacora = await ReportesAsistenciaService.getBitacora(idUsu, desde, hasta);
+      return ApiResponse.success(res, bitacora);
     } catch (error) {
       next(error);
     }
